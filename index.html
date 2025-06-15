@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack Card Counter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #006400;
+        }
+        .setup {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .counter {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: none;
+        }
+        button {
+            background-color: #006400;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #004d00;
+        }
+        #resetBtn {
+            background-color: #8B0000;
+        }
+        #resetBtn:hover {
+            background-color: #6B0000;
+        }
+        .count-display {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        .true-count {
+            font-weight: bold;
+            color: #006400;
+        }
+        .instructions {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
+            text-align: left;
+        }
+        select, input {
+            padding: 8px;
+            margin: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Blackjack Card Counter</h1>
+    
+    <div class="setup" id="setup">
+        <h2>Game Setup</h2>
+        <div>
+            <label for="decks">Number of decks:</label>
+            <select id="decks">
+                <option value="1">1 Deck</option>
+                <option value="2">2 Decks</option>
+                <option value="4">4 Decks</option>
+                <option value="6">6 Decks</option>
+                <option value="8">8 Decks</option>
+            </select>
+        </div>
+        <button id="startBtn">Start Counting</button>
+        
+        <div class="instructions">
+            <p><strong>Hi-Lo Counting System:</strong></p>
+            <ul>
+                <li>Low cards (2-6): +1</li>
+                <li>Neutral cards (7-9): 0</li>
+                <li>High cards (10-A): -1</li>
+            </ul>
+            <p>Click the appropriate button when you see a card dealt.</p>
+        </div>
+    </div>
+    
+    <div class="counter" id="counter">
+        <h2>Card Counting</h2>
+        <div class="count-display">
+            Running Count: <span id="runningCount">0</span>
+        </div>
+        <div class="count-display">
+            True Count: <span id="trueCount" class="true-count">0.0</span>
+        </div>
+        <div class="count-display">
+            Cards Remaining: ~<span id="cardsRemaining">312</span> (<span id="decksRemaining">6.0</span> decks)
+        </div>
+        
+        <div>
+            <button id="lowCard">Low Card (2-6) +1</button>
+            <button id="neutralCard">Neutral (7-9) 0</button>
+            <button id="highCard">High Card (10-A) -1</button>
+        </div>
+        
+        <button id="resetBtn">Reset Game</button>
+        
+        <div class="instructions">
+            <p><strong>Betting Strategy:</strong></p>
+            <ul>
+                <li>True Count ≤ 1: Minimum bet</li>
+                <li>True Count = 2: 2x minimum</li>
+                <li>True Count = 3: 4x minimum</li>
+                <li>True Count = 4: 8x minimum</li>
+                <li>True Count ≥ 5: Maximum bet</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let runningCount = 0;
+        let totalCards = 312; // Default 6 decks
+        let cardsRemaining = totalCards;
+        
+        // DOM elements
+        const setupDiv = document.getElementById('setup');
+        const counterDiv = document.getElementById('counter');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const lowCardBtn = document.getElementById('lowCard');
+        const neutralCardBtn = document.getElementById('neutralCard');
+        const highCardBtn = document.getElementById('highCard');
+        const runningCountDisplay = document.getElementById('runningCount');
+        const trueCountDisplay = document.getElementById('trueCount');
+        const cardsRemainingDisplay = document.getElementById('cardsRemaining');
+        const decksRemainingDisplay = document.getElementById('decksRemaining');
+        const decksSelect = document.getElementById('decks');
+        
+        // Initialize game
+        startBtn.addEventListener('click', startGame);
+        resetBtn.addEventListener('click', resetGame);
+        lowCardBtn.addEventListener('click', () => updateCount(1));
+        neutralCardBtn.addEventListener('click', () => updateCount(0));
+        highCardBtn.addEventListener('click', () => updateCount(-1));
+        
+        function startGame() {
+            const numDecks = parseInt(decksSelect.value);
+            totalCards = numDecks * 52;
+            cardsRemaining = totalCards;
+            runningCount = 0;
+            
+            updateDisplay();
+            
+            setupDiv.style.display = 'none';
+            counterDiv.style.display = 'block';
+        }
+        
+        function resetGame() {
+            setupDiv.style.display = 'block';
+            counterDiv.style.display = 'none';
+        }
+        
+        function updateCount(value) {
+            runningCount += value;
+            cardsRemaining = Math.max(0, cardsRemaining - 1);
+            updateDisplay();
+        }
+        
+        function updateDisplay() {
+            runningCountDisplay.textContent = runningCount;
+            
+            const decksRemaining = cardsRemaining / 52;
+            const trueCount = decksRemaining > 0 ? (runningCount / decksRemaining).toFixed(1) : 0;
+            
+            trueCountDisplay.textContent = trueCount;
+            cardsRemainingDisplay.textContent = cardsRemaining;
+            decksRemainingDisplay.textContent = decksRemaining.toFixed(1);
+            
+            // Color code true count
+            if (trueCount > 0) {
+                trueCountDisplay.style.color = '#006400'; // Dark green
+            } else if (trueCount < 0) {
+                trueCountDisplay.style.color = '#8B0000'; // Dark red
+            } else {
+                trueCountDisplay.style.color = '#000000'; // Black
+            }
+        }
+    </script>
+</body>
+</html>
